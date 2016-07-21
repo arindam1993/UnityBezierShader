@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
+using System.Linq;
 public class BlobManager : MonoBehaviour {
 
     //Outer loop of the blob : Assign In Ediot
@@ -8,12 +9,15 @@ public class BlobManager : MonoBehaviour {
     //Center of the blob : Assign in editor
     public Transform center;
 
+
     MeshFilter _mf ;
 
     private Mesh blobMesh;
 
 	// Use this for initialization
 	void Start () {
+        transform.position = Vector3.zero;
+
 	    //Creating and adding a Mesh
         blobMesh = new Mesh();
 
@@ -27,63 +31,42 @@ public class BlobManager : MonoBehaviour {
             this.gameObject.AddComponent<MeshRenderer>();
         }
 
-        // 2x Since adding midpoinst, +1 for the center
-        int numVert = 2*outerLoop.Length + 1;
+        int numVerts = 2*outerLoop.Length +1;
+        int numTris = 2*outerLoop.Length*3;
+        List<Vector3> _vertices = new List<Vector3>(numVerts);
+        List<int> _triangles = new List<int>(numTris);
 
-        //outer + inner tris
-        int numTris = 2 * outerLoop.Length;
+      
+     
 
-        Vector3[] _vertices = new Vector3[numVert];
-        int[] _triangles = new int[3 * numTris];
-
-        //Start Populating vertices
-
-        //Add Last Midpoint
-        Vector3 lastMid =(outerLoop[0].position +  outerLoop[outerLoop.Length - 1].position )/2.0f;
-        //First is midpoint for first and last
-        _vertices[0] = lastMid;
-
-        //Last vertex is the center of the blob
-        _vertices[_vertices.Length - 1] = center.position;
-        int vertCtr = 1;
-        int triCtr = 0;
-        int numOuterVerts = numVert - 1;
+        //Subdivide outer loop 
         for( int it_outer = 0 ; it_outer < outerLoop.Length ; it_outer++){
-            Vector3 curr = outerLoop[it_outer].position;
-            Vector3 next = outerLoop[(it_outer + 1)% outerLoop.Length].position;
+            Vector3 curr = outerLoop[myMod( it_outer, outerLoop.Length)].position;
+            Vector3 next = outerLoop[myMod(it_outer + 1, outerLoop.Length)].position;
 
-            //Debug.Log("Curr"+next);
-
-            _vertices[vertCtr] = curr; vertCtr = (vertCtr+1) ;
-
-
-            if(it_outer !=(outerLoop.Length-1) ){
-                Vector3 mid = (curr + next)/2.0f; 
-                _vertices[vertCtr] = mid; vertCtr = (vertCtr+1) ;
-            }
-
-
-            //Adding Outer loop triangle
-            int first = vertCtr -3;
-            int middle = vertCtr - 2;
-            int last = vertCtr - 1;
-            if( it_outer ==(outerLoop.Length-1)){
-                first = vertCtr -2;
-                middle = vertCtr - 1;
-                last = 0;
-            }
-            _triangles[triCtr] = first;    ++triCtr;
-            _triangles[triCtr] = middle; ++triCtr;
-            _triangles[triCtr] = last; ++triCtr;
-
-            //Adding inner fill triangle
-            _triangles[triCtr] = first;    triCtr++;
-            _triangles[triCtr] = last; triCtr++;
-            _triangles[triCtr] = _vertices.Length - 1; triCtr++;
+            _vertices.Add(curr);
+            _vertices.Add((curr + next)/2.0f);
            
         }
-        blobMesh.vertices = _vertices;
-        blobMesh.triangles = _triangles;
+        _vertices.Add(center.position);
+        //Generate triangles from computed vertices
+        int center_i = _vertices.Count - 1;
+        for( int it_outer = 0 ; it_outer < outerLoop.Length ; it_outer++){
+            int p1_i = 2 * it_outer;
+            int p2_i = myMod(2 * it_outer + 1, _vertices.Count - 1);
+            int p3_i = myMod(2 * it_outer - 1, _vertices.Count - 1);
+
+            _triangles.Add(p1_i);
+            _triangles.Add(p2_i);
+            _triangles.Add(p3_i);
+
+            _triangles.Add(p2_i);
+            _triangles.Add(center_i);
+            _triangles.Add(p3_i);
+
+        }
+        blobMesh.vertices = _vertices.ToArray();
+        blobMesh.triangles = _triangles.ToArray();
         blobMesh.RecalculateNormals();
         _mf.mesh = blobMesh;
 
@@ -92,31 +75,23 @@ public class BlobManager : MonoBehaviour {
       
 	}
 
+    int myMod(int p1,int p2){
+        return (p1%p2 + p2)%p2;
+    }
+
 
 	
 	// Update is called once per frame
 	void Update () {
-        int vertCt = 1;
+
         Vector3[] _vertices = _mf.mesh.vertices;
-        for( int it_outer = 0 ; it_outer < outerLoop.Length ; it_outer++){
+        for( int it_outer=0; it_outer< outerLoop.Length; it_outer++){
             Vector3 curr = outerLoop[it_outer].position;
             Vector3 next = outerLoop[(it_outer + 1)% outerLoop.Length].position;
-            Vector3 mid = (curr + next)/2.0f;
 
-            _vertices[vertCt] = curr;   vertCt++;
-
-            if ( it_outer !=(outerLoop.Length-1) ){
-                _vertices[vertCt] = mid;    vertCt++;
-            }
-
+            _vertices[2*it_outer] = curr;
+            _vertices[2*it_outer + 1] = (curr + next)/2.0f;
         }
-        
-        //Add Last Midpoint
-        Vector3 lastMid =(outerLoop[0].position +  outerLoop[outerLoop.Length - 1].position )/2;
-        //First is midpoint for first and last
-        _vertices[0] = lastMid;
-        
-        //Last vertex is the center of the blob
         _vertices[_vertices.Length - 1] = center.position;
         _mf.mesh.vertices = _vertices;
 
