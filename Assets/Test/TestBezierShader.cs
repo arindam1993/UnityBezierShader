@@ -19,7 +19,7 @@ public class TestBezierShader : MonoBehaviour {
         }
 
         int[] _tris =  {0, 1, 2};
-        Vector2[] _uvs =  { new Vector2(0,0), new Vector2(0, 0.5f), new Vector2(1,1)};
+        Vector2[] _uvs =  { new Vector2(0,0), new Vector2(0, 0), new Vector2(0,0)};
 
 
         mesh.vertices = _verts;
