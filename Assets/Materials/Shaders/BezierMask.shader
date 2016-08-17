@@ -1,4 +1,4 @@
-﻿Shader "Unlit/BezierShader"
+﻿Shader "Unlit/BezierMask"
 {
 	Properties
 	{
@@ -6,12 +6,20 @@
 	}
 	SubShader
 	{
-		Tags { "Queue"="Transparent" }
-		Blend SrcAlpha OneMinusSrcAlpha
+		Tags{ "Queue" = "Transparent" }
+		ColorMask 0
 		LOD 100
 
 		Pass
 		{
+			// Write the value 1 to the stencil buffer
+			Stencil
+			{
+				Ref 1
+				Comp Always
+				Pass Replace
+			}
+
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -43,19 +51,18 @@
 			float4 frag (data i) : SV_Target
 			{
 				float4 col = _MainColor;
+				col.a = 0;
 				float2 p = i.uv;
 				
 				//The condition we described earlier
 				float val = p.y*p.y - p.x;
 				
 				//Do not render pixels outside
-				if (val > 0.05) discard;
-				//Some free anti-aliasing using an alpha of 0.5 of the edges
-				if( val >0 && val <= 0.05) col.a = 0.5;
+				if (val < 0) discard;
 				
 				//Point is inside return the main color.
 			  	return col; 
-				//return float4(p.x,p.y,0,1); 
+			
 			}
 			ENDCG
 		}
