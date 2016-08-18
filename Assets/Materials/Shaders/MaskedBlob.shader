@@ -2,7 +2,7 @@
 {
 	Properties
 	{
-		_MainColor ("MainColor", Color) = (1,1,1,1)
+		_MainTex ("MainTexture", 2D) = "white"{}
 	}
 	SubShader
 	{
@@ -32,13 +32,15 @@
 			};
 
 			float4 _MainColor;
-			
+			sampler2D _MainTex;
+			float4 _MainTex_ST;
+
 			data vert (data v)
 			{
 				data o;
 				//USe the model-view-projection matrix to calculate screen space positions of the vertices
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-				o.uv = v.uv;
+				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				
 				
 				return o;
@@ -47,7 +49,7 @@
 			//Result from vertex program, is passed to fragment program
 			float4 frag (data i) : SV_Target
 			{
-				float4 col = _MainColor;
+				fixed4 col = tex2D(_MainTex, i.uv);
 				return col;
 			
 			}

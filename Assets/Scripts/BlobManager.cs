@@ -57,7 +57,7 @@ public class BlobManager : MonoBehaviour {
 
         float phi = Mathf.PI * 2 / outerLoop.Length;
 
-        
+        uvs[numVerts - 1] = new Vector2(0.5f, 0.5f);
         for (int it_out = 0; it_out < outerLoop.Length; it_out++)
         {
             verts[it_out] = _offset(outerLoop[it_out].position);
@@ -69,7 +69,7 @@ public class BlobManager : MonoBehaviour {
 
             float theta = phi * it_out;
             float x = -1 * 0.5f * Mathf.Cos(theta) + 0.5f;
-            float y = -1 * 0.5f * Mathf.Sin(theta) + 0.5f;
+            float y =   0.5f * Mathf.Sin(theta) + 0.5f;
 
             uvs[it_out] = new Vector2(x, y);
 
